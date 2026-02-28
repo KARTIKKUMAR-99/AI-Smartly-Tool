@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Smartly – Board Exam AI Study Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--r:#E8192C;--rd:#B5121F;--rp:#FFF0F1;--w:#fff;--g1:#f8f8f8;--g2:#efefef;--g3:#ccc;--g4:#888;--g5:#444;--blk:#111;--rad:12px;--sh:0 2px 12px rgba(232,25,44,.10);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--g1);color:var(--blk);min-height:100vh;font-size:14px;}
+/* LOADER */
+#ld{position:fixed;inset:0;background:#fff;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
+#ld.out{animation:ldout .4s .2s forwards;}
+@keyframes ldout{to{opacity:0;pointer-events:none;}}
+.ldlogo{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--r);}
+.ldlogo b{color:var(--blk);}
+.ldbar{width:180px;height:3px;background:var(--g2);border-radius:3px;overflow:hidden;}
+.ldfill{height:100%;width:0;background:var(--r);animation:ldf 1.3s ease forwards;}
+@keyframes ldf{to{width:100%;}}
+/* TOPBAR */
+#top{position:sticky;top:0;z-index:100;background:#fff;border-bottom:1.5px solid var(--g2);display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:52px;}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;color:var(--r);cursor:pointer;}
+.logo b{color:var(--blk);}
+.topR{display:flex;align-items:center;gap:8px;}
+.cls-sel{background:var(--r);color:#fff;border:none;border-radius:18px;padding:4px 12px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
+.iBtn{background:none;border:none;cursor:pointer;padding:6px;border-radius:7px;color:var(--g4);transition:all .15s;}
+.iBtn:hover{background:var(--rp);color:var(--r);}
+.mBtn{display:none;}
+/* LAYOUT */
+#app{display:flex;min-height:calc(100vh - 52px);}
+/* SIDEBAR */
+#sb{width:200px;min-width:200px;background:#fff;border-right:1.5px solid var(--g2);padding:10px 6px;display:flex;flex-direction:column;gap:2px;transition:transform .25s;}
+.sbsec{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--g3);padding:8px 8px 3px;}
+.ni{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:9px;border:none;background:none;cursor:pointer;font-size:.82rem;color:var(--g5);width:100%;text-align:left;transition:all .15s;font-family:'Inter',sans-serif;}
+.ni svg{width:14px;height:14px;flex-shrink:0;}
+.ni:hover{background:var(--rp);color:var(--r);}
+.ni.on{background:var(--r);color:#fff;font-weight:600;}
+.sbfoot{margin-top:auto;padding:8px 6px;}
+.sbsel{width:100%;padding:7px 9px;border:1.5px solid var(--g2);border-radius:9px;font-size:.8rem;background:#fff;font-family:'Inter',sans-serif;cursor:pointer;}
+/* MAIN */
+#mn{flex:1;overflow-y:auto;}
+.panel{display:none;padding:20px 16px;max-width:820px;margin:0 auto;animation:pup .25s ease;}
+.panel.on{display:block;}
+@keyframes pup{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+/* DASHBOARD */
+.bnr{background:linear-gradient(130deg,var(--r),var(--rd));border-radius:var(--rad);padding:20px;color:#fff;margin-bottom:16px;position:relative;overflow:hidden;}
+.bnr::after{content:'';position:absolute;right:-15px;top:-15px;width:110px;height:110px;background:rgba(255,255,255,.08);border-radius:50%;}
+.bnr h2{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;margin-bottom:4px;}
+.bnr p{font-size:.83rem;opacity:.9;}
+.str{display:flex;gap:4px;margin-top:12px;flex-wrap:wrap;}
+.sd{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;}
+.sd.d{background:rgba(255,255,255,.28);color:#fff;}
+.sd.t{background:#fff;color:var(--r);}
+.sd.m{background:rgba(255,255,255,.1);color:rgba(255,255,255,.35);}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:9px;margin-bottom:16px;}
+.scard{background:#fff;border:1.5px solid var(--g2);border-radius:var(--rad);padding:12px;text-align:center;}
+.snum{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--r);}
+.slbl{font-size:.72rem;color:var(--g4);margin-top:1px;}
+.qgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px;}
+.qcard{background:#fff;border:1.5px solid var(--g2);border-radius:var(--rad);padding:12px;cursor:pointer;transition:all .18s;}
+.qcard:hover{border-color:var(--r);transform:translateY(-2px);box-shadow:var(--sh);}
+.qic{width:30px;height:30px;background:var(--rp);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;font-size:.9rem;}
+.qcard h4{font-family:'Syne',sans-serif;font-size:.8rem;font-weight:700;margin-bottom:2px;}
+.qcard p{font-size:.72rem;color:var(--g4);}
+/* SEC HEAD */
+.sh{margin-bottom:12px;}
+.sh h2{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;}
+.sh p{font-size:.8rem;color:var(--g4);margin-top:2px;}
+/* FORM */
+.fg{margin-bottom:10px;}
+.fg label{display:block;font-size:.76rem;font-weight:600;color:var(--g4);margin-bottom:3px;}
+.fc{width:100%;padding:8px 11px;border:1.5px solid var(--g2);border-radius:9px;font-family:'Inter',sans-serif;font-size:.84rem;background:#fff;color:var(--blk);transition:border-color .15s;}
+.fc:focus{outline:none;border-color:var(--r);}
+textarea.fc{resize:vertical;min-height:75px;}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:500px){.fr{grid-template-columns:1fr;}}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 16px;border-radius:9px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;border:none;transition:all .15s;}
+.btnP{background:var(--r);color:#fff;}
+.btnP:hover{background:var(--rd);}
+.btnP:disabled{background:var(--g3);cursor:not-allowed;}
+.btnO{background:#fff;color:var(--r);border:1.5px solid var(--r);}
+.btnO:hover{background:var(--rp);}
+.btnG{background:#fff;color:var(--g5);border:1.5px solid var(--g2);}
+.btnG:hover{background:var(--g1);}
+.btnSm{padding:5px 11px;font-size:.76rem;}
+.btnFull{width:100%;justify-content:center;}
+.btnRow{display:flex;gap:7px;flex-wrap:wrap;align-items:center;}
+/* AI RESPONSE */
+.air{background:#fff;border:1.5px solid var(--g2);border-radius:var(--rad);padding:16px;margin-top:12px;}
+.airH{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:10px;border-bottom:1.5px solid var(--g2);flex-wrap:wrap;gap:6px;}
+.aibadge{display:inline-flex;align-items:center;gap:5px;background:var(--rp);color:var(--r);font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:15px;}
+.dot{width:6px;height:6px;background:var(--r);border-radius:50%;animation:bk 1s infinite;}
+@keyframes bk{0%,100%{opacity:1;}50%{opacity:.2;}}
+.airActs{display:flex;gap:4px;}
+.aic{font-size:.85rem;line-height:1.75;color:#333;}
+.aic h3{font-family:'Syne',sans-serif;font-weight:700;font-size:.94rem;color:var(--blk);margin:10px 0 4px;}
+.aic h4{font-family:'Syne',sans-serif;font-weight:600;font-size:.88rem;color:var(--r);margin:8px 0 3px;}
+.aic ul,.aic ol{padding-left:17px;margin:4px 0;}
+.aic li{margin-bottom:3px;}
+.aic strong{font-weight:600;color:var(--blk);}
+.aic p{margin-bottom:6px;}
+.aic code{background:var(--g1);padding:1px 5px;border-radius:4px;font-size:.8rem;font-family:monospace;}
+.aic .hb{background:var(--rp);border-left:3px solid var(--r);padding:8px 12px;border-radius:0 7px 7px 0;margin:7px 0;font-size:.82rem;}
+/* THINKING */
+.think{display:flex;align-items:center;gap:7px;padding:14px;font-size:.82rem;color:var(--g4);}
+.dots{display:inline-flex;gap:3px;}
+.dots span{width:6px;height:6px;background:var(--r);border-radius:50%;animation:db .8s infinite;}
+.dots span:nth-child(2){animation-delay:.13s;}
+.dots span:nth-child(3){animation-delay:.26s;}
+@keyframes db{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-6px);}}
+/* TABS */
+.tabs{display:flex;gap:2px;background:var(--g1);padding:3px;border-radius:9px;margin-bottom:12px;overflow-x:auto;}
+.tab{flex:1;min-width:fit-content;padding:6px 9px;text-align:center;border-radius:7px;border:none;background:none;cursor:pointer;font-size:.78rem;font-weight:500;color:var(--g4);white-space:nowrap;transition:all .15s;font-family:'Inter',sans-serif;}
+.tab.on{background:#fff;color:var(--r);font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.07);}
+/* QUIZ */
+.qq{background:#fff;border:1.5px solid var(--g2);border-radius:var(--rad);padding:14px;margin-bottom:10px;}
+.qnum{font-size:.68rem;font-weight:700;color:var(--r);text-transform:uppercase;margin-bottom:4px;letter-spacing:.4px;}
+.qtxt{font-size:.88rem;font-weight:500;margin-bottom:11px;line-height:1.5;}
+.qopts{display:flex;flex-direction:column;gap:6px;}
+.qopt{display:flex;align-items:center;gap:8px;padding:8px 11px;border:1.5px solid var(--g2);border-radius:8px;cursor:pointer;font-size:.83rem;transition:all .14s;user-select:none;}
+.qopt:hover{border-color:var(--r);background:var(--rp);}
+.qopt.sel{border-color:var(--r);background:var(--rp);color:var(--r);}
+.qopt.ok{border-color:#16a34a;background:#f0fdf4;color:#15803d;}
+.qopt.no{border-color:#dc2626;background:#fef2f2;color:#dc2626;}
+.qltr{width:22px;height:22px;border-radius:50%;background:var(--g1);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.qopt.sel .qltr{background:var(--r);color:#fff;}
+.qopt.ok .qltr{background:#16a34a;color:#fff;}
+.qopt.no .qltr{background:#dc2626;color:#fff;}
+.qex{margin-top:7px;padding:7px 11px;background:var(--g1);border-radius:7px;font-size:.78rem;color:var(--g4);display:none;border-left:3px solid var(--r);}
+.qex.show{display:block;}
+.scoreC{background:#fff;border:1.5px solid var(--g2);border-radius:var(--rad);padding:20px;text-align:center;margin-top:12px;}
+.scCircle{width:80px;height:80px;border-radius:50%;border:4px solid var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 10px;}
+.scNum{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--r);}
+/* FLASHCARD */
+.fcWrap{perspective:900px;margin-bottom:10px;cursor:pointer;}
+.fcCard{width:100%;min-height:120px;position:relative;transform-style:preserve-3d;transition:transform .45s;}
+.fcCard.flip{transform:rotateY(180deg);}
+.fcF,.fcB{backface-visibility:hidden;position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;border-radius:var(--rad);background:#fff;border:1.5px solid var(--g2);}
+.fcB{transform:rotateY(180deg);background:var(--r);color:#fff;border-color:var(--r);}
+.fclbl{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.9px;opacity:.55;margin-bottom:6px;}
+.fctxt{font-size:.9rem;font-weight:500;text-align:center;line-height:1.5;}
+.fchint{font-size:.68rem;opacity:.45;margin-top:6px;}
+/* PROGRESS */
+.pb{background:var(--g2);border-radius:3px;height:6px;overflow:hidden;margin:4px 0;}
+.pbf{height:100%;background:var(--r);border-radius:3px;transition:width .5s;}
+/* ANALYTICS */
+.ag{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:16px;}
+.ac{background:#fff;border:1.5px solid var(--g2);border-radius:var(--rad);padding:12px;}
+.ac h4{font-family:'Syne',sans-serif;font-size:.72rem;font-weight:700;color:var(--g4);margin-bottom:9px;text-transform:uppercase;letter-spacing:.3px;}
+.ar{display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:.76rem;}
+.ar span:first-child{width:68px;flex-shrink:0;color:var(--g4);}
+/* FOCUS */
+#fov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:800;flex-direction:column;align-items:center;justify-content:center;color:#fff;}
+#fov.on{display:flex;}
+.ftimer{font-family:'Syne',sans-serif;font-size:4.5rem;font-weight:800;}
+.flbl{font-size:.85rem;opacity:.45;margin-top:4px;}
+.fbtns{display:flex;gap:8px;margin-top:20px;}
+/* TOAST */
+#tst{position:fixed;bottom:16px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--blk);color:#fff;padding:8px 16px;border-radius:25px;font-size:.79rem;font-weight:500;z-index:9999;transition:transform .25s;pointer-events:none;max-width:88vw;text-align:center;}
+#tst.on{transform:translateX(-50%) translateY(0);}
+/* MOBILE */
+#sbov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:90;}
+@media(max-width:720px){
+  #sb{position:fixed;left:0;top:52px;height:calc(100vh - 52px);z-index:99;transform:translateX(-100%);box-shadow:3px 0 16px rgba(0,0,0,.1);}
+  #sb.open{transform:translateX(0);}
+  #sbov{display:block;}
+  .mBtn{display:flex;}
+  .panel{padding:14px 11px;}
+  .ftimer{font-size:3.2rem;}
+}
+@media(max-width:420px){
+  .topR .iBtn{display:none;}
+  .topR .iBtn:last-child{display:flex;}
+}
+</style>
+</head>
+<body>
+
+<div id="ld">
+  <div class="ldlogo">AI <b>Smartly</b></div>
+  <div class="ldbar"><div class="ldfill"></div></div>
+  <div style="font-size:.76rem;color:#bbb;">Loading AI Study Assistant…</div>
+</div>
+
+<div id="tst"></div>
+<div id="sbov" onclick="closeSB()"></div>
+
+<!-- TOP -->
+<div id="top">
+  <div style="display:flex;align-items:center;gap:9px;">
+    <button class="iBtn mBtn" onclick="toggleSB()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <div class="logo" onclick="nav('dash',null)">AI <b>Smartly</b></div>
+  </div>
+  <div class="topR">
+    <select class="cls-sel" id="gCls">
+      <option value="8">Class 8</option><option value="9">Class 9</option>
+      <option value="10" selected>Class 10</option>
+      <option value="11">Class 11</option><option value="12">Class 12</option>
+    </select>
+    <button class="iBtn" onclick="openFocus()" title="Focus Timer">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+    </button>
+  </div>
+</div>
+
+<div id="app">
+<!-- SIDEBAR -->
+<nav id="sb">
+  <div class="sbsec">Study Tools</div>
+  <button class="ni on" onclick="nav('dash',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard
+  </button>
+  <button class="ni" onclick="nav('answer',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Answer Generator
+  </button>
+  <button class="ni" onclick="nav('concept',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Concept Simplifier
+  </button>
+  <button class="ni" onclick="nav('notes',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Smart Notes
+  </button>
+  <button class="ni" onclick="nav('quiz',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Quiz &amp; Tests
+  </button>
+  <button class="ni" onclick="nav('feedback',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Answer Feedback
+  </button>
+  <button class="ni" onclick="nav('doubt',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Doubt Solver
+  </button>
+  <div class="sbsec" style="margin-top:4px;">Planning</div>
+  <button class="ni" onclick="nav('plan',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Study Plan
+  </button>
+  <button class="ni" onclick="nav('flash',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.04"/></svg>Flashcards
+  </button>
+  <button class="ni" onclick="nav('analytics',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics
+  </button>
+  <div class="sbfoot">
+    <div style="font-size:.7rem;color:var(--g4);margin-bottom:3px;">Select Class</div>
+    <select class="sbsel" onchange="document.getElementById('gCls').value=this.value">
+      <option value="8">Class 8</option><option value="9">Class 9</option>
+      <option value="10" selected>Class 10 (Board)</option>
+      <option value="11">Class 11</option><option value="12">Class 12 (Board)</option>
+    </select>
+  </div>
+</nav>
+
+<main id="mn">
+
+<!-- DASHBOARD -->
+<div class="panel on" id="p-dash">
+  <div class="bnr">
+    <h2>Welcome, Student! 👋</h2>
+    <p>You're on a <strong>7-day streak</strong>. Keep studying every day!</p>
+    <div class="str">
+      <div class="sd d">M</div><div class="sd d">T</div><div class="sd d">W</div>
+      <div class="sd d">T</div><div class="sd d">F</div><div class="sd d">S</div>
+      <div class="sd t">S</div>
+    </div>
+  </div>
+  <div class="sgrid">
+    <div class="scard"><div class="snum">24</div><div class="slbl">Topics Covered</div></div>
+    <div class="scard"><div class="snum">12</div><div class="slbl">Quizzes Done</div></div>
+    <div class="scard"><div class="snum">78%</div><div class="slbl">Avg Score</div></div>
+    <div class="scard"><div class="snum">31h</div><div class="slbl">Study Hours</div></div>
+  </div>
+  <div class="sh"><h2>Quick Actions</h2></div>
+  <div class="qgrid">
+    <div class="qcard" onclick="nav('answer',null)"><div class="qic">✍️</div><h4>Generate Answer</h4><p>Board-level answers</p></div>
+    <div class="qcard" onclick="nav('quiz',null)"><div class="qic">🧪</div><h4>Take a Quiz</h4><p>AI test questions</p></div>
+    <div class="qcard" onclick="nav('notes',null)"><div class="qic">📝</div><h4>Smart Notes</h4><p>Chapter summaries</p></div>
+    <div class="qcard" onclick="nav('doubt',null)"><div class="qic">🔍</div><h4>Solve Doubt</h4><p>Step-by-step help</p></div>
+    <div class="qcard" onclick="nav('plan',null)"><div class="qic">📅</div><h4>Study Plan</h4><p>Daily schedule</p></div>
+    <div class="qcard" onclick="nav('flash',null)"><div class="qic">🔄</div><h4>Flashcards</h4><p>Quick revision</p></div>
+  </div>
+</div>
+
+<!-- ANSWER GENERATOR -->
+<div class="panel" id="p-answer">
+  <div class="sh"><h2>✍️ Answer Generator</h2><p>AI generates complete board-exam structured answers</p></div>
+  <div class="fr">
+    <div class="fg"><label>Subject</label>
+      <select class="fc" id="a-sub"><option>Science</option><option>Mathematics</option><option>Social Science</option><option>English</option><option>Hindi</option><option>Physics</option><option>Chemistry</option><option>Biology</option><option>History</option><option>Geography</option><option>Economics</option><option>Political Science</option></select>
+    </div>
+    <div class="fg"><label>Answer Type</label>
+      <select class="fc" id="a-type">
+        <option value="5m">Detailed 5-Mark Answer</option>
+        <option value="3m">Short 3-Mark Answer</option>
+        <option value="1m">Very Short 1-Mark</option>
+        <option value="def">Definition</option>
+        <option value="diff">Difference / Comparison Table</option>
+        <option value="diag">With Diagram Description</option>
+        <option value="num">Numerical Step-by-Step</option>
+      </select>
+    </div>
+  </div>
+  <div class="fg"><label>Topic / Question</label>
+    <textarea class="fc" id="a-q" rows="3" placeholder="e.g. Explain Photosynthesis | Laws of Motion | Causes of French Revolution | Solve: 2x+3=11"></textarea>
+  </div>
+  <div class="fg"><label>Extra Instructions (optional)</label>
+    <input class="fc" id="a-ex" placeholder="e.g. add examples, focus on CBSE keywords, include diagram…">
+  </div>
+  <div class="btnRow">
+    <button class="btn btnP" onclick="doAnswer()">✦ Generate Answer</button>
+    <button class="btn btnO btnSm" onclick="doAnswer('kp')">Key Points</button>
+    <button class="btn btnG btnSm" onclick="doAnswer('ex')">With Examples</button>
+  </div>
+  <div id="a-res"></div>
+</div>
+
+<!-- CONCEPT -->
+<div class="panel" id="p-concept">
+  <div class="sh"><h2>💡 Concept Simplifier</h2><p>Any complex topic explained simply for your class</p></div>
+  <div class="fr">
+    <div class="fg"><label>Subject</label>
+      <select class="fc" id="c-sub"><option>Science</option><option>Mathematics</option><option>Social Science</option><option>Physics</option><option>Chemistry</option><option>Biology</option><option>History</option><option>Economics</option></select>
+    </div>
+    <div class="fg"><label>Style</label>
+      <select class="fc" id="c-sty">
+        <option value="simple">Simple Language</option>
+        <option value="analogy">Real-Life Analogies</option>
+        <option value="steps">Step-by-Step</option>
+        <option value="story">Story Format</option>
+      </select>
+    </div>
+  </div>
+  <div class="fg"><label>Concept</label>
+    <textarea class="fc" id="c-tp" rows="2" placeholder="e.g. Osmosis, Trigonometry, Nationalism, Newton's Laws…"></textarea>
+  </div>
+  <button class="btn btnP" onclick="doConcept()">💡 Simplify Now</button>
+  <div id="c-res"></div>
+</div>
+
+<!-- NOTES -->
+<div class="panel" id="p-notes">
+  <div class="sh"><h2>📝 Smart Notes</h2><p>AI summaries, bullet notes, revision sheets & mnemonics</p></div>
+  <div class="tabs">
+    <button class="tab on" onclick="stab(this,'nt-s')">Summary</button>
+    <button class="tab" onclick="stab(this,'nt-b')">Bullet Notes</button>
+    <button class="tab" onclick="stab(this,'nt-r')">Revision Sheet</button>
+    <button class="tab" onclick="stab(this,'nt-m')">Mnemonics</button>
+  </div>
+  <div id="nt-s">
+    <div class="fr">
+      <div class="fg"><label>Subject</label><select class="fc" id="ns-s"><option>Science</option><option>Mathematics</option><option>Social Science</option><option>Physics</option><option>Chemistry</option><option>Biology</option><option>History</option></select></div>
+      <div class="fg"><label>Chapter / Topic</label><input class="fc" id="ns-c" placeholder="e.g. Chemical Reactions and Equations"></div>
+    </div>
+    <button class="btn btnP" onclick="doNotes('s')">Generate Summary</button>
+  </div>
+  <div id="nt-b" style="display:none">
+    <div class="fr">
+      <div class="fg"><label>Subject</label><select class="fc" id="nb-s"><option>Science</option><option>Mathematics</option><option>Social Science</option><option>Biology</option><option>Chemistry</option></select></div>
+      <div class="fg"><label>Topic</label><input class="fc" id="nb-t" placeholder="e.g. Heredity and Evolution"></div>
+    </div>
+    <button class="btn btnP" onclick="doNotes('b')">Generate Bullet Notes</button>
+  </div>
+  <div id="nt-r" style="display:none">
+    <div class="fr">
+      <div class="fg"><label>Subject</label><select class="fc" id="nr-s"><option>Science</option><option>Mathematics</option><option>Social Science</option><option>Physics</option><option>Chemistry</option></select></div>
+      <div class="fg"><label>Chapter</label><input class="fc" id="nr-c" placeholder="e.g. Electricity"></div>
+    </div>
+    <button class="btn btnP" onclick="doNotes('r')">Generate Revision Sheet</button>
+  </div>
+  <div id="nt-m" style="display:none">
+    <div class="fg"><label>What to Remember</label>
+      <textarea class="fc" id="nm-t" rows="2" placeholder="e.g. order of planets, types of bonds, steps of mitosis…"></textarea>
+    </div>
+    <button class="btn btnP" onclick="doNotes('m')">Create Memory Tricks</button>
+  </div>
+  <div id="n-res"></div>
+</div>
+
+<!-- QUIZ -->
+<div class="panel" id="p-quiz">
+  <div class="sh"><h2>🧪 Quiz &amp; Tests</h2><p>AI-generated quizzes with instant scoring and feedback</p></div>
+  <div id="qz-setup">
+    <div class="fr">
+      <div class="fg"><label>Subject</label>
+        <select class="fc" id="qz-sub"><option>Science</option><option>Mathematics</option><option>Social Science</option><option>Physics</option><option>Chemistry</option><option>Biology</option><option>History</option><option>Geography</option><option>Economics</option><option>English</option></select>
+      </div>
+      <div class="fg"><label>Quiz Type</label>
+        <select class="fc" id="qz-type">
+          <option value="mcq">Multiple Choice (MCQ)</option>
+          <option value="tf">True / False</option>
+          <option value="mix">Mixed (MCQ + T/F)</option>
+        </select>
+      </div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Topic / Chapter</label><input class="fc" id="qz-tp" placeholder="e.g. Chemical Reactions, Triangles, French Revolution…"></div>
+      <div class="fg"><label>Number of Questions</label>
+        <select class="fc" id="qz-n"><option value="5">5 Questions</option><option value="8" selected>8 Questions</option><option value="10">10 Questions</option></select>
+      </div>
+    </div>
+    <div class="fg"><label>Difficulty</label>
+      <select class="fc" id="qz-d" style="max-width:220px;"><option value="easy">Easy</option><option value="med" selected>Medium (Board Level)</option><option value="hard">Hard (Advanced)</option></select>
+    </div>
+    <button class="btn btnP" id="qzBtn" onclick="startQuiz()">▶ Generate &amp; Start Quiz</button>
+  </div>
+  <div id="qz-msg" style="display:none;" class="air">
+    <div class="think"><div class="dots"><span></span><span></span><span></span></div>AI is building your quiz… please wait</div>
+  </div>
+  <div id="qz-area"></div>
+</div>
+
+<!-- FEEDBACK -->
+<div class="panel" id="p-feedback">
+  <div class="sh"><h2>💬 Answer Writing Feedback</h2><p>Submit your answer – AI evaluates and gives model answer</p></div>
+  <div class="fr">
+    <div class="fg"><label>Subject</label>
+      <select class="fc" id="f-sub"><option>Science</option><option>Mathematics</option><option>Social Science</option><option>Physics</option><option>Chemistry</option><option>Biology</option><option>History</option><option>Economics</option></select>
+    </div>
+    <div class="fg"><label>Marks</label>
+      <select class="fc" id="f-mk"><option value="1">1 Mark</option><option value="2">2 Marks</option><option value="3">3 Marks</option><option value="5" selected>5 Marks</option><option value="8">8 Marks</option></select>
+    </div>
+  </div>
+  <div class="fg"><label>Question</label><textarea class="fc" id="f-q" rows="2" placeholder="Paste the question here…"></textarea></div>
+  <div class="fg"><label>Your Answer</label><textarea class="fc" id="f-a" rows="5" placeholder="Write your answer here. AI will score it and suggest improvements…"></textarea></div>
+  <button class="btn btnP" onclick="doFeedback()">✦ Evaluate My Answer</button>
+  <div id="f-res"></div>
+</div>
+
+<!-- DOUBT -->
+<div class="panel" id="p-doubt">
+  <div class="sh"><h2>🔍 Instant Doubt Solver</h2><p>Ask anything – get accurate step-by-step explanations</p></div>
+  <div class="fr">
+    <div class="fg"><label>Subject</label>
+      <select class="fc" id="d-sub"><option>Science</option><option>Mathematics</option><option>Social Science</option><option>Physics</option><option>Chemistry</option><option>Biology</option><option>History</option><option>Economics</option><option>English</option></select>
+    </div>
+    <div class="fg"><label>Type</label>
+      <select class="fc" id="d-ty"><option value="concept">Conceptual</option><option value="num">Numerical</option><option value="theory">Theoretical</option><option value="cmp">Compare Two Concepts</option></select>
+    </div>
+  </div>
+  <div class="fg"><label>Your Doubt</label>
+    <textarea class="fc" id="d-q" rows="3" placeholder="e.g. Why does ice float on water? | Solve: 2x+5=13 | Difference between mitosis and meiosis?"></textarea>
+  </div>
+  <div class="btnRow">
+    <button class="btn btnP" onclick="doDoubt()">🔍 Solve My Doubt</button>
+    <button class="btn btnG btnSm" id="vbtn" onclick="voiceIn()">🎤 Voice</button>
+  </div>
+  <div id="d-res"></div>
+</div>
+
+<!-- PLAN -->
+<div class="panel" id="p-plan">
+  <div class="sh"><h2>📅 Personalized Study Plan</h2><p>AI creates day-by-day exam preparation schedule</p></div>
+  <div class="fr">
+    <div class="fg"><label>Exam Date</label><input type="date" class="fc" id="sp-dt"></div>
+    <div class="fg"><label>Daily Study Hours</label>
+      <select class="fc" id="sp-h"><option value="2">2 hrs/day</option><option value="3">3 hrs/day</option><option value="4" selected>4 hrs/day</option><option value="5">5 hrs/day</option><option value="6">6+ hrs/day</option></select>
+    </div>
+  </div>
+  <div class="fr">
+    <div class="fg"><label>Weak Subjects</label><input class="fc" id="sp-w" placeholder="e.g. Maths, Chemistry"></div>
+    <div class="fg"><label>Strong Subjects</label><input class="fc" id="sp-s" placeholder="e.g. English, Biology"></div>
+  </div>
+  <div class="fg"><label>All Subjects to Cover</label><input class="fc" id="sp-sb" placeholder="e.g. Science, Maths, Social Science, English, Hindi"></div>
+  <div class="fg"><label>Goal (optional)</label><input class="fc" id="sp-g" placeholder="e.g. Score 90%+, complete all chapters…"></div>
+  <button class="btn btnP" onclick="doPlan()">📅 Generate Study Plan</button>
+  <div id="sp-res"></div>
+</div>
+
+<!-- FLASHCARDS -->
+<div class="panel" id="p-flash">
+  <div class="sh"><h2>🔄 Flashcards &amp; Revision</h2><p>AI flashcards with spaced repetition scheduling</p></div>
+  <div class="tabs">
+    <button class="tab on" onclick="stab(this,'fc-g')">Flashcards</button>
+    <button class="tab" onclick="stab(this,'rs-g')">Revision Schedule</button>
+  </div>
+  <div id="fc-g">
+    <div class="fr">
+      <div class="fg"><label>Subject</label><select class="fc" id="fc-s"><option>Science</option><option>Mathematics</option><option>Social Science</option><option>Physics</option><option>Chemistry</option><option>Biology</option></select></div>
+      <div class="fg"><label>Topic</label><input class="fc" id="fc-t" placeholder="e.g. Acids, Bases and Salts"></div>
+    </div>
+    <div class="fg"><label>Cards</label>
+      <select class="fc" id="fc-n" style="max-width:190px;"><option value="5">5 cards</option><option value="8" selected>8 cards</option><option value="12">12 cards</option></select>
+    </div>
+    <button class="btn btnP" onclick="doFlash()">Generate Flashcards</button>
+    <div id="fc-res"></div>
+  </div>
+  <div id="rs-g" style="display:none">
+    <div class="fg"><label>Topics Studied</label>
+      <textarea class="fc" id="rs-t" rows="3" placeholder="e.g. Chemical Reactions, Electricity, Triangles, Nationalism…"></textarea>
+    </div>
+    <button class="btn btnP" onclick="doRevSch()">Create Revision Schedule</button>
+    <div id="rs-res"></div>
+  </div>
+</div>
+
+<!-- ANALYTICS -->
+<div class="panel" id="p-analytics">
+  <div class="sh"><h2>📊 Analytics &amp; Progress</h2><p>Track performance and get AI improvement tips</p></div>
+  <div class="ag">
+    <div class="ac">
+      <h4>Subject Performance</h4>
+      <div class="ar"><span>Science</span><div class="pb" style="flex:1"><div class="pbf" style="width:78%"></div></div><span style="color:var(--r);margin-left:4px;font-size:.74rem;">78%</span></div>
+      <div class="ar"><span>Maths</span><div class="pb" style="flex:1"><div class="pbf" style="width:62%"></div></div><span style="color:var(--r);margin-left:4px;font-size:.74rem;">62%</span></div>
+      <div class="ar"><span>Social Sci</span><div class="pb" style="flex:1"><div class="pbf" style="width:85%"></div></div><span style="color:var(--r);margin-left:4px;font-size:.74rem;">85%</span></div>
+      <div class="ar"><span>English</span><div class="pb" style="flex:1"><div class="pbf" style="width:90%"></div></div><span style="color:var(--r);margin-left:4px;font-size:.74rem;">90%</span></div>
+      <div class="ar"><span>Hindi</span><div class="pb" style="flex:1"><div class="pbf" style="width:71%"></div></div><span style="color:var(--r);margin-left:4px;font-size:.74rem;">71%</span></div>
+    </div>
+    <div class="ac">
+      <h4>Weekly Study (hrs)</h4>
+      <div style="display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:7px;">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="width:100%;background:var(--r);border-radius:3px 3px 0 0;height:55px;"></div><span style="font-size:.58rem;color:var(--g3);">M</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="width:100%;background:var(--r);border-radius:3px 3px 0 0;height:70px;"></div><span style="font-size:.58rem;color:var(--g3);">T</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="width:100%;background:var(--r);border-radius:3px 3px 0 0;height:40px;"></div><span style="font-size:.58rem;color:var(--g3);">W</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="width:100%;background:var(--r);border-radius:3px 3px 0 0;height:65px;"></div><span style="font-size:.58rem;color:var(--g3);">T</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="width:100%;background:var(--r);border-radius:3px 3px 0 0;height:75px;"></div><span style="font-size:.58rem;color:var(--g3);">F</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="width:100%;background:var(--rp);border:1.5px solid var(--r);border-bottom:none;border-radius:3px 3px 0 0;height:50px;"></div><span style="font-size:.58rem;color:var(--g3);">S</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="width:100%;background:var(--g2);border-radius:3px 3px 0 0;height:18px;"></div><span style="font-size:.58rem;color:var(--g3);">S</span></div>
+      </div>
+    </div>
+    <div class="ac">
+      <h4>Quiz Stats</h4>
+      <div style="text-align:center;padding:6px 0;">
+        <div class="scCircle" style="width:65px;height:65px;"><span class="scNum" style="font-size:1rem;">78%</span></div>
+        <div style="font-size:.76rem;color:var(--g4);">12 quizzes done</div>
+      </div>
+    </div>
+    <div class="ac">
+      <h4>AI Tips</h4>
+      <button class="btn btnO btnSm btnFull" onclick="doInsights()" style="margin-bottom:7px;">Get AI Analysis</button>
+      <div id="ins-res" style="font-size:.78rem;color:var(--g4);">Click above for tips.</div>
+    </div>
+  </div>
+  <div class="sh"><h2>Topics Covered</h2></div>
+  <div style="display:flex;flex-wrap:wrap;gap:6px;">
+    <span style="background:var(--rp);color:var(--r);padding:4px 10px;border-radius:15px;font-size:.75rem;font-weight:500;">Chemical Reactions ✓</span>
+    <span style="background:var(--rp);color:var(--r);padding:4px 10px;border-radius:15px;font-size:.75rem;font-weight:500;">Acids &amp; Bases ✓</span>
+    <span style="background:var(--rp);color:var(--r);padding:4px 10px;border-radius:15px;font-size:.75rem;font-weight:500;">Triangles ✓</span>
+    <span style="background:var(--rp);color:var(--r);padding:4px 10px;border-radius:15px;font-size:.75rem;font-weight:500;">Nationalism ✓</span>
+    <span style="background:var(--rp);color:var(--r);padding:4px 10px;border-radius:15px;font-size:.75rem;font-weight:500;">Light ✓</span>
+    <span style="background:var(--g1);color:var(--g4);padding:4px 10px;border-radius:15px;font-size:.75rem;">Electricity (ongoing)</span>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- FOCUS -->
+<div id="fov">
+  <div class="ftimer" id="ft">25:00</div>
+  <div class="flbl">Pomodoro Focus Session</div>
+  <div class="fbtns">
+    <button class="btn btnO" onclick="togFocus()" id="fbtn">▶ Start</button>
+    <button class="btn btnG" style="color:#fff;border-color:rgba(255,255,255,.2);" onclick="closeFocus()">✕ Exit</button>
+  </div>
+  <p style="margin-top:12px;font-size:.72rem;opacity:.35;">Press Escape to exit</p>
+</div>
+
+<script>
+// ══════════════════════════════════
+// AI CORE
+// ══════════════════════════════════
+async function ai(prompt, sys) {
+  const body = { model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] };
+  if (sys) body.system = sys;
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const d = await r.json();
+  return (d.content || []).map(c => c.text || '').join('');
+}
+
+function thinking(id, msg) {
+  $id(id).innerHTML = `<div class="air"><div class="think"><div class="dots"><span></span><span></span><span></span></div>${msg || 'AI is thinking…'}</div></div>`;
+}
+function respond(id, txt) {
+  $id(id).innerHTML = `<div class="air"><div class="airH"><span class="aibadge"><span class="dot"></span>AI Smartly</span><div class="airActs"><button class="btn btnG btnSm" onclick="doCopy('${id}C')">📋</button><button class="btn btnG btnSm" onclick="doSpeak('${id}C')">🔊</button><button class="btn btnG btnSm" onclick="doPDF('${id}C')">📄</button></div></div><div class="aic" id="${id}C">${render(txt)}</div></div>`;
+}
+function errBox(id, msg) {
+  $id(id).innerHTML = `<div class="air" style="border-color:#dc2626;"><p style="color:#dc2626;font-size:.82rem;">⚠️ ${msg}</p><button class="btn btnG btnSm" style="margin-top:7px;" onclick="$id('${id}').innerHTML=''">Dismiss</button></div>`;
+}
+function $id(id) { return document.getElementById(id); }
+function cls() { return $id('gCls').value; }
+function eh(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Markdown renderer
+function render(t) {
+  const e = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  let h = e(t);
+  h = h.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  h = h.replace(/\*(.+?)\*/g,'<em>$1</em>');
+  h = h.replace(/`([^`\n]+)`/g,'<code>$1</code>');
+  h = h.replace(/^#{1,2}\s+(.+)$/gm,'<h3>$1</h3>');
+  h = h.replace(/^#{3,4}\s+(.+)$/gm,'<h4>$1</h4>');
+  h = h.replace(/^&gt;\s+(.+)$/gm,'<div class="hb">$1</div>');
+  h = h.replace(/^[-*]\s+(.+)$/gm,'<li>$1</li>');
+  h = h.replace(/^\d+\.\s+(.+)$/gm,'<li>$1</li>');
+  h = h.replace(/(<li>.*?<\/li>\n?)+/g, m => `<ul>${m}</ul>`);
+  h = h.replace(/<\/ul>\s*<ul>/g,'');
+  return h.split(/\n\n+/).map(p => {
+    p = p.trim();
+    if (!p) return '';
+    if (/^<(h[2-4]|ul|div|table)/.test(p)) return p;
+    return `<p>${p.replace(/\n/g,'<br>')}</p>`;
+  }).join('');
+}
+
+function doCopy(id) { const e=$id(id); if(e) navigator.clipboard.writeText(e.innerText).then(()=>toast('Copied ✓')); }
+function doSpeak(id) { const e=$id(id); if(!e)return; window.speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(e.innerText); u.rate=.88; u.lang='en-IN'; window.speechSynthesis.speak(u); toast('Reading…'); }
+function doPDF(id) {
+  const e=$id(id); if(!e)return;
+  const w=window.open('');
+  w.document.write(`<!DOCTYPE html><html><head><title>AI Smartly</title><style>body{font-family:Arial,sans-serif;max-width:700px;margin:28px auto;line-height:1.72;padding:18px}h2,h3{color:#E8192C}h4{color:#B5121F}strong{font-weight:700}ul{padding-left:20px}li{margin-bottom:3px}.hb{border-left:4px solid #E8192C;padding:8px 12px;background:#FFF0F1;margin:8px 0;border-radius:0 6px 6px 0}code{background:#f4f4f4;padding:1px 5px;border-radius:3px;font-family:monospace}</style></head><body><h2>AI Smartly – Study Notes</h2><hr style="border-color:#E8192C;margin:12px 0">${e.innerHTML}</body></html>`);
+  w.document.close(); w.print();
+}
+function toast(m,dur=2300){const t=$id('tst');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),dur);}
+
+// ══════════════════════════════════
+// NAV
+// ══════════════════════════════════
+function nav(id, btn) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ni').forEach(b=>b.classList.remove('on'));
+  const p = $id('p-'+id); if(p) p.classList.add('on');
+  if(btn) btn.classList.add('on');
+  else document.querySelectorAll('.ni').forEach(b=>{if((b.getAttribute('onclick')||'').includes("'"+id+"'"))b.classList.add('on');});
+  closeSB();
+}
+function toggleSB(){$id('sb').classList.toggle('open');$id('sbov').style.display=$id('sb').classList.contains('open')?'block':'none';}
+function closeSB(){$id('sb').classList.remove('open');$id('sbov').style.display='none';}
+function stab(btn, cid) {
+  btn.closest('.panel').querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');
+  ['nt-s','nt-b','nt-r','nt-m','fc-g','rs-g'].forEach(i=>{const e=$id(i);if(e)e.style.display='none';});
+  const e=$id(cid); if(e)e.style.display='block';
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeFocus();});
+
+// ══════════════════════════════════
+// ANSWER GENERATOR
+// ══════════════════════════════════
+async function doAnswer(mode) {
+  const sub=$id('a-sub').value, type=$id('a-type').value,
+    q=$id('a-q').value.trim(), ex=$id('a-ex').value.trim(), cl=cls();
+  if(!q){toast('⚠️ Please enter a topic or question');return;}
+  const tmap={'5m':'comprehensive 5-mark answer (intro + body + conclusion)','3m':'concise 3-mark answer with 3 key points','1m':'very short 1-mark answer (2-3 lines only)','def':'clear definition with explanation and example','diff':'comparison table with at least 4 differences','diag':'detailed answer with labeled diagram description','num':'step-by-step numerical solution (given → formula → working → answer)'};
+  const mex=mode==='kp'?'\nProvide key points as bullet list only.':mode==='ex'?'\nInclude 2 real-life examples.':'';
+  const sys=`You are an expert CBSE Class ${cl} board exam teacher. Write accurate, complete, exam-optimized answers. Bold key terms. Use ## headings, > for important notes, - for bullet points.`;
+  const p=`Write a ${tmap[type]||'detailed answer'} for this Class ${cl} ${sub} question:\n\n"${q}"${ex?'\n\nExtra: '+ex:''}${mex}\n\nEnd with: 📌 Exam Tip: (one line)`;
+  thinking('a-res','Generating board-level answer…');
+  try{const t=await ai(p,sys);respond('a-res',t);}catch{errBox('a-res','Failed to connect. Please try again.');}
+}
+
+// ══════════════════════════════════
+// CONCEPT
+// ══════════════════════════════════
+async function doConcept() {
+  const sub=$id('c-sub').value,sty=$id('c-sty').value,tp=$id('c-tp').value.trim(),cl=cls();
+  if(!tp){toast('⚠️ Enter a concept');return;}
+  const sm={simple:'simple everyday language',analogy:'real-life analogies',steps:'clear numbered steps',story:'a short story'};
+  const p=`Explain Class ${cl} ${sub} concept: "${tp}"\nUse ${sm[sty]}.\n\n## What is it?\n## Simple Explanation\n## Real-World Example\n## Key Points to Remember\n## Memory Trick 💡\n## 2 Exam Questions`;
+  thinking('c-res','Simplifying concept…');
+  try{const t=await ai(p,`You are a brilliant Class ${cl} ${sub} teacher. Be accurate and easy to understand.`);respond('c-res',t);}catch{errBox('c-res','Failed. Try again.');}
+}
+
+// ══════════════════════════════════
+// NOTES
+// ══════════════════════════════════
+async function doNotes(type) {
+  const cl=cls(); let p='',msg='';
+  if(type==='s'){
+    const sub=$id('ns-s').value,ch=$id('ns-c').value.trim();
+    if(!ch){toast('⚠️ Enter chapter name');return;}
+    msg='Generating summary…';
+    p=`Chapter summary for Class ${cl} ${sub}: "${ch}"\n\n## Overview\n## Key Topics\n## Important Definitions\n## Formulas / Dates / Facts (use > boxes)\n## Common Exam Questions\n## One-Line Summary`;
+  } else if(type==='b'){
+    const sub=$id('nb-s').value,tp=$id('nb-t').value.trim();
+    if(!tp){toast('⚠️ Enter topic');return;}
+    msg='Creating bullet notes…';
+    p=`Bullet-point notes for Class ${cl} ${sub}: "${tp}"\nUse ## headings, - bullets, **bold** key terms, > important boxes, code for formulas. Make it scannable.`;
+  } else if(type==='r'){
+    const sub=$id('nr-s').value,ch=$id('nr-c').value.trim();
+    if(!ch){toast('⚠️ Enter chapter');return;}
+    msg='Building revision sheet…';
+    p=`One-page revision sheet Class ${cl} ${sub}: "${ch}"\n\n## ⚡ Top 10 Must-Know Points\n## 📐 Formulas\n## 🔑 Key Terms (5-8)\n## ❗ Common Mistakes\n## 📋 Predicted Questions (3-4)\n## 🧠 Memory Tricks`;
+  } else {
+    const tp=$id('nm-t').value.trim();
+    if(!tp){toast('⚠️ Enter what to remember');return;}
+    msg='Creating memory tricks…';
+    p=`Mnemonics for Class ${cl} students to remember: "${tp}"\n\n## Acronym\n## Rhyme\n## Visual Story\n## Chunking\n## Practice Quiz (3 Qs)`;
+  }
+  thinking('n-res',msg);
+  try{const t=await ai(p,`You are an expert Class ${cl} educator. Be accurate and exam-focused.`);respond('n-res',t);}catch{errBox('n-res','Failed. Try again.');}
+}
+
+// ══════════════════════════════════
+// QUIZ - BULLETPROOF APPROACH
+// ══════════════════════════════════
+let QD=[], QA={}, QDONE=false;
+
+async function startQuiz() {
+  const sub=$id('qz-sub').value, type=$id('qz-type').value,
+    tp=$id('qz-tp').value.trim(), n=parseInt($id('qz-n').value),
+    d=$id('qz-d').value, cl=cls();
+  if(!tp){toast('⚠️ Enter a topic first');return;}
+
+  $id('qzBtn').disabled=true;
+  $id('qz-msg').style.display='block';
+  $id('qz-area').innerHTML='';
+  QD=[]; QA={}; QDONE=false;
+
+  const dlvl={easy:'easy recall',med:'standard CBSE board exam',hard:'advanced higher-order thinking'};
+
+  // Build prompt asking for STRICT plain-text format (not JSON) to avoid parse failures
+  let typeInstr='';
+  if(type==='mcq') typeInstr=`All questions must be MCQ with 4 options (A, B, C, D).`;
+  else if(type==='tf') typeInstr=`All questions must be True or False statements. Use only 2 options: A) True and B) False.`;
+  else typeInstr=`Mix of MCQ (4 options) and True/False (2 options: A) True, B) False).`;
+
+  const p=`You are a Class ${cl} ${sub} quiz generator. Create exactly ${n} ${dlvl[d]} difficulty questions on topic: "${tp}".
+
+${typeInstr}
+
+Output ONLY in this EXACT format for each question, no extra text, no numbering outside the markers:
+
+##Q1##
+Question text here?
+##A## Option A text
+##B## Option B text
+##C## Option C text
+##D## Option D text
+##ANS## A
+##EXP## Brief explanation why the answer is correct.
+
+##Q2##
+...and so on for all ${n} questions.
+
+RULES:
+- Every question must be factually accurate for Class ${cl} ${sub}
+- Questions must specifically test knowledge of "${tp}"
+- For True/False: use only A and B options, skip C and D lines
+- ##ANS## must be a single letter only
+- No markdown, no JSON, no code blocks, just the format above`;
+
+  try {
+    const raw = await ai(p);
+    const parsed = parseQuiz(raw);
+    if (parsed.length === 0) throw new Error('Parse failed');
+    QD = parsed;
+    $id('qz-msg').style.display='none';
+    $id('qzBtn').disabled=false;
+    buildQuiz(sub, tp, cl);
+  } catch(err) {
+    $id('qz-msg').style.display='none';
+    $id('qzBtn').disabled=false;
+    $id('qz-area').innerHTML=`<div class="air" style="border-color:#dc2626;padding:16px;">
+      <p style="color:#dc2626;font-weight:600;margin-bottom:5px;">⚠️ Quiz generation failed. Please try again.</p>
+      <p style="font-size:.79rem;color:var(--g4);">Use a specific topic like "Chemical Reactions" or "Laws of Motion".</p>
+      <button class="btn btnP btnSm" onclick="startQuiz()" style="margin-top:9px;">🔄 Retry</button>
+    </div>`;
+  }
+}
+
+function parseQuiz(raw) {
+  const questions = [];
+  // Split by ##Q[number]##
+  const blocks = raw.split(/##Q\d+##/).filter(b => b.trim());
+  blocks.forEach(block => {
+    try {
+      const lines = block.split('\n').map(l => l.trim()).filter(l => l);
+      if (!lines.length) return;
+      const q = {};
+      q.text = lines[0];
+      q.opts = [];
+      q.ans = '';
+      q.exp = '';
+      lines.forEach(line => {
+        if (line.startsWith('##A##')) q.opts[0] = line.replace('##A##','').trim();
+        else if (line.startsWith('##B##')) q.opts[1] = line.replace('##B##','').trim();
+        else if (line.startsWith('##C##')) q.opts[2] = line.replace('##C##','').trim();
+        else if (line.startsWith('##D##')) q.opts[3] = line.replace('##D##','').trim();
+        else if (line.startsWith('##ANS##')) q.ans = line.replace('##ANS##','').trim().toUpperCase()[0] || 'A';
+        else if (line.startsWith('##EXP##')) q.exp = line.replace('##EXP##','').trim();
+      });
+      q.opts = q.opts.filter(Boolean);
+      if (q.text && q.opts.length >= 2 && q.ans) questions.push(q);
+    } catch(e) {}
+  });
+  return questions;
+}
+
+function buildQuiz(sub, tp, cl) {
+  const LTR = ['A','B','C','D'];
+  let h = `<div style="margin-top:12px;"><div style="background:var(--rp);border-radius:9px;padding:10px 13px;margin-bottom:12px;font-size:.8rem;"><strong style="color:var(--r);">📝 ${QD.length} Questions</strong> — ${sub}: ${eh(tp)} · Class ${cl}</div>`;
+  QD.forEach((q,i)=>{
+    h += `<div class="qq" id="qb${i}"><div class="qnum">Question ${i+1} / ${QD.length}</div><div class="qtxt">${eh(q.text)}</div><div class="qopts" id="qo${i}">`;
+    q.opts.forEach((opt,j)=>{
+      h += `<div class="qopt" id="op${i}${j}" onclick="pick(${i},${j},'${LTR[j]}')"><div class="qltr">${LTR[j]}</div><span>${eh(opt)}</span></div>`;
+    });
+    h += `</div><div class="qex" id="qe${i}">💡 ${eh(q.exp)}</div></div>`;
+  });
+  h += `<button class="btn btnP btnFull" id="sbBtn" onclick="submitQ()" style="margin-top:8px;">✓ Submit Quiz &amp; See Results</button></div>`;
+  $id('qz-area').innerHTML = h;
+}
+
+function pick(qi, oi, L) {
+  if(QDONE) return;
+  for(let j=0;j<4;j++){const e=$id(`op${qi}${j}`);if(e)e.classList.remove('sel');}
+  const e=$id(`op${qi}${oi}`);if(e)e.classList.add('sel');
+  QA[qi]=L;
+}
+
+function submitQ() {
+  const unanswered = QD.filter((_,i)=>!QA[i]);
+  if(unanswered.length){toast(`⚠️ Answer all ${QD.length} questions first`);return;}
+  QDONE=true;
+  const sb=$id('sbBtn'); if(sb) sb.style.display='none';
+  const LTR=['A','B','C','D'];
+  let score=0;
+  QD.forEach((q,i)=>{
+    const correct=q.ans.toUpperCase()[0];
+    const user=(QA[i]||'').toUpperCase()[0];
+    if(user===correct) score++;
+    q.opts.forEach((_,j)=>{
+      const e=$id(`op${i}${j}`);
+      if(!e)return;
+      e.classList.remove('sel'); e.style.cursor='default';
+      if(LTR[j]===correct) e.classList.add('ok');
+      else if(LTR[j]===user && user!==correct) e.classList.add('no');
+    });
+    const ex=$id(`qe${i}`); if(ex) ex.classList.add('show');
+  });
+  const pct=Math.round((score/QD.length)*100);
+  const [grade,msg]=pct>=90?['🏆 Outstanding!','Excellent! You have mastered this topic.']:pct>=75?['🌟 Great Job!','Very good! Review wrong answers.']:pct>=60?['👍 Good Work','Good effort! Focus on incorrect answers.']:pct>=40?['📚 Keep Practicing','More practice needed. Review your notes!']:['🔄 Needs Revision','Study notes first, then retry.'];
+  $id('qz-area').insertAdjacentHTML('beforeend',`<div class="scoreC"><div class="scCircle"><span class="scNum">${pct}%</span></div><h3 style="font-family:'Syne',sans-serif;font-size:1.1rem;margin-bottom:4px;">${grade}</h3><p style="font-size:.83rem;color:var(--g4);margin-bottom:4px;"><strong>${score}</strong> / <strong>${QD.length}</strong> correct</p><p style="font-size:.78rem;color:var(--g4);margin-bottom:12px;">${msg}</p><div style="display:flex;gap:7px;justify-content:center;flex-wrap:wrap;"><button class="btn btnP btnSm" onclick="resetQuiz()">🔄 New Quiz</button><button class="btn btnO btnSm" onclick="nav('notes',null)">📝 Notes</button><button class="btn btnG btnSm" onclick="nav('doubt',null)">🔍 Doubts</button></div></div>`);
+  setTimeout(()=>document.querySelector('.scoreC')?.scrollIntoView({behavior:'smooth',block:'nearest'}),80);
+}
+
+function resetQuiz() {
+  QD=[]; QA={}; QDONE=false;
+  $id('qz-area').innerHTML='';
+  $id('qzBtn').disabled=false;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ══════════════════════════════════
+// FEEDBACK
+// ══════════════════════════════════
+async function doFeedback() {
+  const sub=$id('f-sub').value,mk=$id('f-mk').value,q=$id('f-q').value.trim(),a=$id('f-a').value.trim(),cl=cls();
+  if(!q||!a){toast('⚠️ Enter question and answer');return;}
+  const p=`Evaluate Class ${cl} ${sub} board exam answer.\n\nQuestion (${mk} marks): ${q}\n\nStudent's answer:\n${a}\n\n## 📊 Score: X / ${mk}\n## ✅ What is Good\n## ❌ Missing Points\n## 🔑 Board Keywords Analysis\n## 📋 Structure Comments\n## ✍️ Model Answer (full ${mk} marks)\n## 💡 Tips for Improvement`;
+  thinking('f-res','Evaluating your answer…');
+  try{const t=await ai(p,`You are a strict but fair Class ${cl} board exam evaluator. Be honest, detailed, constructive.`);respond('f-res',t);}catch{errBox('f-res','Failed. Try again.');}
+}
+
+// ══════════════════════════════════
+// DOUBT
+// ══════════════════════════════════
+async function doDoubt() {
+  const sub=$id('d-sub').value,ty=$id('d-ty').value,q=$id('d-q').value.trim(),cl=cls();
+  if(!q){toast('⚠️ Type your doubt first');return;}
+  const tm={concept:'Explain conceptually with examples',num:'Solve step-by-step: given → formula → steps → answer with units',theory:'Explain all theoretical aspects',cmp:'Create a clear comparison table'};
+  const p=`Class ${cl} ${sub} student doubt: "${q}"\n\n${tm[ty]||'Explain clearly'}\n\n## 🎯 Direct Answer\n## 📖 Step-by-Step\n## 💡 Key Concept\n## 🔗 Related Topics\n## 🧪 Practice Problem (with answer)`;
+  thinking('d-res','Solving your doubt…');
+  try{const t=await ai(p,`You are an expert Class ${cl} ${sub} tutor. Be accurate and thorough.`);respond('d-res',t);}catch{errBox('d-res','Failed. Try again.');}
+}
+function voiceIn() {
+  if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){toast('Voice not supported in this browser');return;}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition,r=new SR();
+  r.lang='en-IN'; r.start();
+  $id('vbtn').textContent='🔴 Listening…'; toast('Speak your doubt…');
+  r.onresult=e=>{$id('d-q').value=e.results[0][0].transcript;$id('vbtn').textContent='🎤 Voice';};
+  r.onerror=r.onend=()=>{$id('vbtn').textContent='🎤 Voice';};
+}
+
+// ══════════════════════════════════
+// PLAN
+// ══════════════════════════════════
+async function doPlan() {
+  const dt=$id('sp-dt').value,h=$id('sp-h').value,w=$id('sp-w').value.trim(),
+    s=$id('sp-s').value.trim(),sb=$id('sp-sb').value.trim(),g=$id('sp-g').value.trim(),cl=cls();
+  if(!dt||!sb){toast('⚠️ Enter exam date and subjects');return;}
+  const days=Math.max(1,Math.ceil((new Date(dt)-new Date())/86400000));
+  const p=`Class ${cl} board exam study plan:\n- Date: ${dt} (${days} days left)\n- Daily hrs: ${h}\n- Subjects: ${sb}\n- Weak: ${w||'not specified'}\n- Strong: ${s||'not specified'}\n- Goal: ${g||'score max marks'}\n\n## 📋 Strategy Overview\n## 🗓️ Phases (Foundation→Practice→Revision→Final)\n## 📅 Week 1 Day-by-Day\n## 📅 Week 2 Day-by-Day\n## 📆 Rest of Weeks (weekly goals)\n## ⏰ Daily Template\n## 🔴 Weak Subject Plan\n## 🏁 Last 2 Weeks\n## 💪 Exam Day Tips`;
+  thinking('sp-res','Building your study plan…');
+  try{const t=await ai(p,`You are a professional Class ${cl} board exam academic counsellor.`);respond('sp-res',t);}catch{errBox('sp-res','Failed. Try again.');}
+}
+
+// ══════════════════════════════════
+// FLASHCARDS - SAME PLAIN-TEXT APPROACH
+// ══════════════════════════════════
+async function doFlash() {
+  const sub=$id('fc-s').value,tp=$id('fc-t').value.trim(),n=$id('fc-n').value,cl=cls();
+  if(!tp){toast('⚠️ Enter a topic');return;}
+  $id('fc-res').innerHTML=`<div class="air"><div class="think"><div class="dots"><span></span><span></span><span></span></div>Creating ${n} flashcards…</div></div>`;
+  const p=`Create exactly ${n} flashcards for Class ${cl} ${sub}: "${tp}"
+
+Output ONLY in this exact format:
+
+##CARD1##
+##FRONT## Question or key term here
+##BACK## Answer or definition here
+
+##CARD2##
+##FRONT## Question
+##BACK## Answer
+
+...continue for all ${n} cards. No other text. Cover key terms, definitions, formulas, processes. Be accurate.`;
+  try {
+    const raw=await ai(p);
+    const cards=parseCards(raw);
+    if(!cards.length) throw new Error('parse fail');
+    showCards(cards);
+  } catch {
+    $id('fc-res').innerHTML=`<div class="air" style="border-color:#dc2626;"><p style="color:#dc2626;">⚠️ Failed. Try again.</p><button class="btn btnP btnSm" onclick="doFlash()" style="margin-top:7px;">🔄 Retry</button></div>`;
+  }
+}
+
+function parseCards(raw) {
+  const cards=[];
+  const blocks=raw.split(/##CARD\d+##/).filter(b=>b.trim());
+  blocks.forEach(b=>{
+    const fM=b.match(/##FRONT##\s*(.+?)(?=##BACK##|$)/s);
+    const bkM=b.match(/##BACK##\s*(.+?)(?=##CARD|$)/s);
+    if(fM&&bkM) cards.push({f:fM[1].trim(),b:bkM[1].trim()});
+  });
+  return cards;
+}
+
+function showCards(cards) {
+  let h=`<div style="margin-top:12px;"><p style="font-size:.76rem;color:var(--g3);margin-bottom:9px;">👆 Tap a card to flip</p>`;
+  cards.forEach((c,i)=>{
+    h+=`<div class="fcWrap" onclick="flipC(${i})"><div class="fcCard" id="fc${i}">
+      <div class="fcF"><div class="fclbl">Question</div><div class="fctxt">${eh(c.f)}</div><div class="fchint">Tap to flip ↓</div></div>
+      <div class="fcB"><div class="fclbl">Answer</div><div class="fctxt">${eh(c.b)}</div></div>
+    </div></div>`;
+  });
+  h+=`<div style="display:flex;gap:6px;margin-top:6px;"><button class="btn btnO btnSm" onclick="flipAll(${cards.length})">Flip All</button><button class="btn btnG btnSm" onclick="resetAll(${cards.length})">↺ Reset</button></div></div>`;
+  $id('fc-res').innerHTML=h;
+}
+function flipC(i){$id('fc'+i)?.classList.toggle('flip');}
+function flipAll(n){for(let i=0;i<n;i++)$id('fc'+i)?.classList.add('flip');}
+function resetAll(n){for(let i=0;i<n;i++)$id('fc'+i)?.classList.remove('flip');}
+
+async function doRevSch() {
+  const tp=$id('rs-t').value.trim(),cl=cls();
+  if(!tp){toast('⚠️ Enter topics');return;}
+  const p=`Spaced repetition schedule for Class ${cl} student.\nTopics: ${tp}\n\n## 🔁 Today\n## 📅 Days 2-7\n## 📆 Week 2\n## 🗓️ Weeks 3-4\n## 🏁 Last Week Before Exam\n## ⚡ Tips Per Topic\n## 🎯 Priority Order`;
+  thinking('rs-res','Creating schedule…');
+  try{const t=await ai(p);respond('rs-res',t);}catch{errBox('rs-res','Failed. Try again.');}
+}
+
+// ══════════════════════════════════
+// ANALYTICS
+// ══════════════════════════════════
+async function doInsights() {
+  const e=$id('ins-res');
+  e.innerHTML=`<div class="dots" style="display:flex;gap:3px;padding:3px 0;"><span></span><span></span><span></span></div>`;
+  try{
+    const t=await ai(`Class 10 CBSE student: Science 78%, Maths 62%, Social 85%, English 90%, Hindi 71%. Weak in Algebra, Chemical Equations. 7-day streak. Give 4 specific bullet-point improvement tips. Short and actionable.`);
+    e.innerHTML=render(t);
+  }catch{e.innerHTML='• Practice 5 Maths problems daily.<br>• Review Chemical Equations with flowcharts.<br>• Read Hindi passages to improve grammar.';}
+}
+
+// ══════════════════════════════════
+// FOCUS TIMER
+// ══════════════════════════════════
+let FS=25*60,FON=false,FI=null;
+function openFocus(){$id('fov').classList.add('on');updF();}
+function closeFocus(){$id('fov').classList.remove('on');clearInterval(FI);FI=null;FON=false;$id('fbtn').textContent='▶ Start';FS=25*60;updF();}
+function togFocus(){
+  if(!FON){FON=true;$id('fbtn').textContent='⏸ Pause';FI=setInterval(()=>{if(FS>0){FS--;updF();}else{clearInterval(FI);FON=false;$id('fbtn').textContent='▶ Start';toast('🎉 Session done! Take a 5-min break.');}},1000);}
+  else{FON=false;clearInterval(FI);$id('fbtn').textContent='▶ Resume';}
+}
+function updF(){const m=String(Math.floor(FS/60)).padStart(2,'0'),s=String(FS%60).padStart(2,'0');$id('ft').textContent=`${m}:${s}`;}
+
+// ══════════════════════════════════
+// INIT
+// ══════════════════════════════════
+window.addEventListener('load',()=>{
+  setTimeout(()=>$id('ld').classList.add('out'),1300);
+  const d=new Date(); d.setMonth(d.getMonth()+2);
+  const sp=$id('sp-dt'); if(sp) sp.valueAsDate=d;
+});
+</script>
+</body>
+</html>
